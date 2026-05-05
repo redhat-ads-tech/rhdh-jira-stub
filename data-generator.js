@@ -84,4 +84,4 @@ function generateIssues(projectKey) {
   return issues;
 }
 
-module.exports = { generateIssues };
+module.exports = { fnv1a, generateIssues, STATUSES, TYPES };
