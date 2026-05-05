@@ -1,0 +1,13 @@
+{
+  "name": "rhdh-jira-stub",
+  "version": "1.0.0",
+  "description": "Lightweight Jira REST API stub for RHDH Scorecards",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "env-var": "^7.5.0",
+    "express": "^4.21.0"
+  }
+}
