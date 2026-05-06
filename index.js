@@ -16,7 +16,7 @@ const { fnv1a, generateIssues, STATUSES, TYPES } = require('./data-generator');
 const HTTP_PORT = env.get('HTTP_PORT').default(8080).asPortNumber();
 const HTTP_HOST = env.get('HTTP_HOST').default('0.0.0.0').asString();
 const NODE_ENV = env.get('NODE_ENV').default('production').asEnum(['production', 'development']);
-const LOG_FORMAT = env.get('LOG_FORMAT').default('dev').asEnum(['combined', 'common', 'dev', 'short', 'tiny']);
+const LOG_FORMAT = env.get('LOG_FORMAT').default('combined').asEnum(['combined', 'common', 'dev', 'short', 'tiny']);
 
 const app = express();
 
