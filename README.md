@@ -12,7 +12,7 @@ The RHDH Scorecards plugin supports Jira as a data source for project health met
 
 Deploy the stub in your environment. It's available as a container image from `ghcr.io/redhat-ads-tech/rhdh-jira-stub`.
 
-Next, install and configure the scorecard dynamic plugins:
+Next, install the scorecard dynamic plugins, and update your `app-config.yaml`:
 
 > [!NOTE]
 > The values below are an example. Refer to the [RHDH Scorecards documentation](https://docs.redhat.com/en/documentation/red_hat_developer_hub/1.8/html/understand_and_visualize_red_hat_developer_hub_project_health_using_scorecards/) for full configuration details.
