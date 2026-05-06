@@ -125,7 +125,9 @@ function handleSearch(jql, startAt, maxResults) {
 
   return {
     startAt: safeStart,
-    maxResults,
+    // Return the actual page size so the plugin's pagination math
+    // (startAt + maxResults >= total → stop) terminates correctly.
+    maxResults: page.length,
     total,
     issues: page,
   };
