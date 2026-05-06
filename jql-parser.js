@@ -1,6 +1,6 @@
 // Minimal regex-based JQL parser.
 // Only extracts the fields the Jira plugin actually queries for:
-//   project, type/issuetype, resolution, status
+//   project, type/issuetype, resolution, status, statuscategory
 // This is NOT a full JQL parser — it just pulls out key=value pairs
 // via regex so the stub can filter its generated data set.
 
@@ -28,6 +28,14 @@ function parseJql(jql) {
   const statusMatch = jql.match(/status\s*=\s*"?([A-Za-z ]+)"?/i);
   if (statusMatch) {
     result.status = statusMatch[1].trim();
+  }
+
+  // Matches "statuscategory not in ("Done", "Won't Do")" — extracts the quoted values
+  const statusCatNotIn = jql.match(/statuscategory\s+not\s+in\s*\(([^)]+)\)/i);
+  if (statusCatNotIn) {
+    result.statusCategoryNotIn = statusCatNotIn[1]
+      .split(',')
+      .map((s) => s.trim().replace(/^["']|["']$/g, ''));
   }
 
   return result;

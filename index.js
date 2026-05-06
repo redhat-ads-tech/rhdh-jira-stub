@@ -20,6 +20,8 @@ const LOG_FORMAT = env.get('LOG_FORMAT').default('dev').asEnum(['combined', 'com
 
 const app = express();
 
+app.use(express.json());
+
 // Use 'dev' for coloured concise output locally, 'combined' for production logs
 app.use(morgan(LOG_FORMAT, {
   skip: (req) => req.path === '/health',
@@ -73,19 +75,21 @@ app.get(`${API}/project/:projectKey/statuses`, (_req, res) => {
   );
 });
 
-// GET /rest/api/{version}/search
-// Mirrors the Jira search endpoint. Accepts: jql, startAt, maxResults
-app.get(`${API}/search`, (req, res) => {
-  const jql = req.query.jql || '';
-  const startAt = parseInt(req.query.startAt, 10) || 0;
-  const maxResults = Math.min(parseInt(req.query.maxResults, 10) || 50, 100);
+// Maps each status name to its Jira status category
+const STATUS_CATEGORIES = {};
+STATUSES.forEach((name) => {
+  if (name === 'Done' || name === 'Closed') STATUS_CATEGORIES[name.toLowerCase()] = 'done';
+  else if (name === 'Open') STATUS_CATEGORIES[name.toLowerCase()] = 'new';
+  else STATUS_CATEGORIES[name.toLowerCase()] = 'indeterminate';
+});
 
+// Shared search logic used by both GET and POST search endpoints
+function handleSearch(jql, startAt, maxResults) {
   const filters = parseJql(jql);
   if (!filters.project) {
-    return res.status(400).json({ errorMessages: ['JQL must include project=KEY'] });
+    return { error: 'JQL must include project=KEY' };
   }
 
-  // Generate the full issue set for the project, then narrow it down
   let issues = generateIssues(filters.project);
 
   // Post-filter: the generator creates all issue types/statuses for a project,
@@ -103,16 +107,68 @@ app.get(`${API}/search`, (req, res) => {
       issues = issues.filter((i) => i.fields.resolution && i.fields.resolution.name.toLowerCase() === filters.resolution.toLowerCase());
     }
   }
+  // "statuscategory not in (Done)" — exclude issues whose status maps to the given category
+  if (filters.statusCategoryNotIn) {
+    const excluded = filters.statusCategoryNotIn.map((c) => c.toLowerCase());
+    issues = issues.filter((i) => {
+      const cat = STATUS_CATEGORIES[i.fields.status.name.toLowerCase()] || 'indeterminate';
+      return !excluded.includes(cat);
+    });
+  }
 
   const total = issues.length;
   const page = issues.slice(startAt, startAt + maxResults);
 
-  res.json({
+  return {
     startAt,
     maxResults,
     total,
     issues: page,
-  });
+  };
+}
+
+// GET /rest/api/{version}/search
+// Classic Jira v2 search via query params (used by the Roadie Jira frontend plugin)
+app.get(`${API}/search`, (req, res) => {
+  const jql = req.query.jql || '';
+  const startAt = parseInt(req.query.startAt, 10) || 0;
+  const maxResults = Math.min(parseInt(req.query.maxResults, 10) || 50, 100);
+
+  const result = handleSearch(jql, startAt, maxResults);
+  if (result.error) {
+    return res.status(400).json({ errorMessages: [result.error] });
+  }
+  res.json(result);
+});
+
+// POST /rest/api/{version}/search
+// Used by the Scorecards Jira module in Data Center mode (API v2).
+// Sends { jql, fields: [], maxResults: 0 } and reads back { total }.
+app.post(`${API}/search`, (req, res) => {
+  const jql = req.body.jql || '';
+  const startAt = parseInt(req.body.startAt, 10) || 0;
+  const maxResults = parseInt(req.body.maxResults, 10) || 50;
+
+  const result = handleSearch(jql, startAt, maxResults);
+  if (result.error) {
+    return res.status(400).json({ errorMessages: [result.error] });
+  }
+  res.json(result);
+});
+
+// POST /rest/api/{version}/search/jql
+// Newer Jira search endpoint used by the Roadie Jira frontend plugin.
+// JQL + pagination params arrive in the JSON request body.
+app.post(`${API}/search/jql`, (req, res) => {
+  const jql = req.body.jql || '';
+  const startAt = parseInt(req.body.startAt, 10) || 0;
+  const maxResults = Math.min(parseInt(req.body.maxResults, 10) || 50, 5000);
+
+  const result = handleSearch(jql, startAt, maxResults);
+  if (result.error) {
+    return res.status(400).json({ errorMessages: [result.error] });
+  }
+  res.json(result);
 });
 
 // GET /rest/api/{version}/issue/{issueKey}
