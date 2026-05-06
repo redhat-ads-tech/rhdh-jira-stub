@@ -6,6 +6,8 @@ A lightweight Node.js service that implements the Jira REST API search endpoint 
 
 The RHDH Scorecards plugin supports Jira as a data source for project health metrics (open issues, bug counts, etc.), but we don't want to maintain a JIRA instance. This stub acts as a drop-in Jira backend so the plugin works out of the box in demo environments.
 
+![Scorecard based on JIRA data](screencap.png)
+
 ## How It Works
 
 1. The project key from the JQL query (e.g. `project=PARASOL`) is hashed with FNV-1a to produce a 32-bit seed
@@ -16,10 +18,20 @@ The same project key always produces the same issues, so metrics are stable acro
 
 ## Endpoints
 
+Both `/rest/api/2/` and `/rest/api/latest/` are supported for all endpoints.
+
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/health` | Returns `{"status":"ok"}` |
-| `GET` | `/rest/api/2/search` | Jira-compatible search (params: `jql`, `startAt`, `maxResults`) |
+| `GET` | `/rest/api/{version}/project/{key}` | Project metadata and issue types |
+| `GET` | `/rest/api/{version}/project/{key}/statuses` | Statuses grouped by issue type |
+| `GET` | `/rest/api/{version}/search` | Search via query params |
+| `POST` | `/rest/api/{version}/search` | Search via JSON body (used by Scorecards) |
+| `POST` | `/rest/api/{version}/search/jql` | Alternate search endpoint |
+| `GET` | `/rest/api/{version}/issue/{key}` | Single issue detail |
+| `GET` | `/rest/api/{version}/user` | Stub user object |
+| `GET` | `/rest/dev-status/1.0/issue/detail` | Empty PR data |
+| `GET` | `/activity` | Empty activity stream |
 
 ## Running Locally
 
@@ -39,6 +51,37 @@ curl 'http://localhost:8080/rest/api/2/search?jql=project=PARASOL'
 | `HTTP_PORT` | `8080` | Server port |
 | `HTTP_HOST` | `0.0.0.0` | Bind address |
 | `NODE_ENV` | `production` | `production` or `development` |
+
+## RHDH Configuration
+
+The stub is accessed via the RHDH backend proxy. The following `app-config` sections are needed, as are the scorecard dynamic plugins:
+
+> [!NOTE]
+> The values below are an example. Refer to the [RHDH Scorecards documentation](https://docs.redhat.com/en/documentation/red_hat_developer_hub/1.8/html/understand_and_visualize_red_hat_developer_hub_project_health_using_scorecards/) for full configuration details.
+
+```yaml
+jira:
+  proxyPath: /jira/api
+  product: datacenter
+
+proxy:
+  endpoints:
+    '/jira/api':
+      target: http://jira-stub.rhdh.svc.cluster.local:8080
+      headers:
+        Accept: application/json
+        Content-Type: application/json
+        X-Atlassian-Token: nocheck
+      allowedMethods: ['GET', 'POST']
+```
+
+Catalog entities need a `jira/project-key` annotation:
+
+```yaml
+metadata:
+  annotations:
+    jira/project-key: PARASOL
+```
 
 ## Container Image
 
