@@ -4,9 +4,43 @@ A lightweight Node.js service that implements the Jira REST API search endpoint 
 
 ## Why
 
-The RHDH Scorecards plugin supports Jira as a data source for project health metrics (open issues, bug counts, etc.), but we don't want to maintain a JIRA instance. This stub acts as a drop-in Jira backend so the plugin works out of the box in demo environments.
+The RHDH Scorecards plugin supports Jira as a data source for project health metrics (open issues, bug counts, etc.), but we don't want to maintain a JIRA instance. This stub acts as a drop-in Jira backend that generates sample issues, so the scorecard plugin works out of the box in demo environments.
 
 ![Scorecard based on JIRA data](screencap.png)
+
+## Usage
+
+Deploy the stub in your environment. It's available as a container image from `ghcr.io/redhat-ads-tech/rhdh-jira-stub`.
+
+Next, install and configure the scorecard dynamic plugins:
+
+> [!NOTE]
+> The values below are an example. Refer to the [RHDH Scorecards documentation](https://docs.redhat.com/en/documentation/red_hat_developer_hub/1.8/html/understand_and_visualize_red_hat_developer_hub_project_health_using_scorecards/) for full configuration details.
+
+```yaml
+jira:
+  proxyPath: /jira/api
+  product: datacenter
+
+proxy:
+  endpoints:
+    '/jira/api':
+      # replace this with the URL to your Jira stub deployment!
+      target: http://jira-stub.rhdh.svc.cluster.local:8080
+      headers:
+        Accept: application/json
+        Content-Type: application/json
+        X-Atlassian-Token: nocheck
+      allowedMethods: ['GET', 'POST']
+```
+
+Catalog entities need a `jira/project-key` annotation:
+
+```yaml
+metadata:
+  annotations:
+    jira/project-key: PARASOL
+```
 
 ## How It Works
 
@@ -51,37 +85,6 @@ curl 'http://localhost:8080/rest/api/2/search?jql=project=PARASOL'
 | `HTTP_PORT` | `8080` | Server port |
 | `HTTP_HOST` | `0.0.0.0` | Bind address |
 | `NODE_ENV` | `production` | `production` or `development` |
-
-## RHDH Configuration
-
-The stub is accessed via the RHDH backend proxy. The following `app-config` sections are needed, as are the scorecard dynamic plugins:
-
-> [!NOTE]
-> The values below are an example. Refer to the [RHDH Scorecards documentation](https://docs.redhat.com/en/documentation/red_hat_developer_hub/1.8/html/understand_and_visualize_red_hat_developer_hub_project_health_using_scorecards/) for full configuration details.
-
-```yaml
-jira:
-  proxyPath: /jira/api
-  product: datacenter
-
-proxy:
-  endpoints:
-    '/jira/api':
-      target: http://jira-stub.rhdh.svc.cluster.local:8080
-      headers:
-        Accept: application/json
-        Content-Type: application/json
-        X-Atlassian-Token: nocheck
-      allowedMethods: ['GET', 'POST']
-```
-
-Catalog entities need a `jira/project-key` annotation:
-
-```yaml
-metadata:
-  annotations:
-    jira/project-key: PARASOL
-```
 
 ## Container Image
 
