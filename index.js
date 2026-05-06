@@ -117,10 +117,14 @@ function handleSearch(jql, startAt, maxResults) {
   }
 
   const total = issues.length;
-  const page = issues.slice(startAt, startAt + maxResults);
+  // Jira treats maxResults <= 0 as "return all". Guard startAt against negatives.
+  const safeStart = Math.max(0, startAt);
+  const page = maxResults <= 0
+    ? issues.slice(safeStart)
+    : issues.slice(safeStart, safeStart + maxResults);
 
   return {
-    startAt,
+    startAt: safeStart,
     maxResults,
     total,
     issues: page,
@@ -215,5 +219,5 @@ app.get('/activity', (_req, res) => {
 });
 
 app.listen(HTTP_PORT, HTTP_HOST, () => {
-  console.log(`jira-stub listening on ${HTTP_HOST}:${HTTP_PORT} (${NODE_ENV})`);
+  console.log(`${new Date().toISOString()} jira-stub listening on ${HTTP_HOST}:${HTTP_PORT} (${NODE_ENV})`);
 });
