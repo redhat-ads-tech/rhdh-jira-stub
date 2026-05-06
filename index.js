@@ -42,19 +42,29 @@ const ISSUE_TYPES = TYPES.map((name, i) => ({
 // Accept both API versions for all endpoints.
 const API = '/rest/api/:version(2|latest)';
 
+// Build a base URL from the incoming request so self/avatarUrl fields
+// contain valid absolute URLs that the Jira plugin can parse.
+function baseUrl(req) {
+  const proto = req.get('x-forwarded-proto') || req.protocol;
+  const host = req.get('x-forwarded-host') || req.get('host');
+  return `${proto}://${host}`;
+}
+
 // GET /rest/api/{version}/project/{projectKey}
 // Returns project metadata including name, key, and available issue types.
 app.get(`${API}/project/:projectKey`, (req, res) => {
   const key = req.params.projectKey.toUpperCase();
+  const base = baseUrl(req);
   res.json({
     id: String(fnv1a(key) % 100000),
+    self: `${base}/rest/api/2/project/${key}`,
     key,
     name: key.charAt(0) + key.slice(1).toLowerCase(),
     avatarUrls: {
-      '48x48': '',
-      '32x32': '',
-      '24x24': '',
-      '16x16': '',
+      '48x48': `${base}/avatar/48`,
+      '32x32': `${base}/avatar/32`,
+      '24x24': `${base}/avatar/24`,
+      '16x16': `${base}/avatar/16`,
     },
     issueTypes: ISSUE_TYPES,
   });
@@ -84,7 +94,7 @@ STATUSES.forEach((name) => {
 });
 
 // Shared search logic used by both GET and POST search endpoints
-function handleSearch(jql, startAt, maxResults) {
+function handleSearch(jql, startAt, maxResults, base) {
   const filters = parseJql(jql);
   if (!filters.project) {
     return { error: 'JQL must include project=KEY' };
@@ -123,13 +133,19 @@ function handleSearch(jql, startAt, maxResults) {
     ? issues.slice(safeStart)
     : issues.slice(safeStart, safeStart + maxResults);
 
+  // Add self URLs to each issue so the plugin can construct valid links
+  const issuesWithSelf = page.map((issue) => ({
+    ...issue,
+    self: `${base}/rest/api/2/issue/${issue.key}`,
+  }));
+
   return {
     startAt: safeStart,
     // Return the actual page size so the plugin's pagination math
     // (startAt + maxResults >= total → stop) terminates correctly.
-    maxResults: page.length,
+    maxResults: issuesWithSelf.length,
     total,
-    issues: page,
+    issues: issuesWithSelf,
   };
 }
 
@@ -140,7 +156,7 @@ app.get(`${API}/search`, (req, res) => {
   const startAt = parseInt(req.query.startAt, 10) || 0;
   const maxResults = Math.min(parseInt(req.query.maxResults, 10) || 50, 100);
 
-  const result = handleSearch(jql, startAt, maxResults);
+  const result = handleSearch(jql, startAt, maxResults, baseUrl(req));
   if (result.error) {
     return res.status(400).json({ errorMessages: [result.error] });
   }
@@ -155,7 +171,7 @@ app.post(`${API}/search`, (req, res) => {
   const startAt = parseInt(req.body.startAt, 10) || 0;
   const maxResults = parseInt(req.body.maxResults, 10) || 50;
 
-  const result = handleSearch(jql, startAt, maxResults);
+  const result = handleSearch(jql, startAt, maxResults, baseUrl(req));
   if (result.error) {
     return res.status(400).json({ errorMessages: [result.error] });
   }
@@ -170,7 +186,7 @@ app.post(`${API}/search/jql`, (req, res) => {
   const startAt = parseInt(req.body.startAt, 10) || 0;
   const maxResults = Math.min(parseInt(req.body.maxResults, 10) || 50, 5000);
 
-  const result = handleSearch(jql, startAt, maxResults);
+  const result = handleSearch(jql, startAt, maxResults, baseUrl(req));
   if (result.error) {
     return res.status(400).json({ errorMessages: [result.error] });
   }
@@ -202,9 +218,16 @@ app.get(`${API}/issue/:issueKey`, (req, res) => {
 // Returns a stub user object. The plugin queries this for avatar display.
 app.get(`${API}/user`, (req, res) => {
   const username = req.query.username || 'unknown';
+  const base = baseUrl(req);
   res.json({
+    self: `${base}/rest/api/2/user?username=${encodeURIComponent(username)}`,
     displayName: username,
-    avatarUrls: { '48x48': '', '32x32': '', '24x24': '', '16x16': '' },
+    avatarUrls: {
+      '48x48': `${base}/avatar/48`,
+      '32x32': `${base}/avatar/32`,
+      '24x24': `${base}/avatar/24`,
+      '16x16': `${base}/avatar/16`,
+    },
   });
 });
 
