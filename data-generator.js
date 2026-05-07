@@ -76,8 +76,13 @@ function generateIssues(projectKey) {
   const pick = (arr) => arr[Math.floor(rand() * arr.length)];
   const count = 5 + Math.floor(rand() * 20); // 5–24 issues per project
 
+  // Start issue numbers at a random offset (100–500) so they look like
+  // a real project with history, not a brand new board.
+  const startNum = 100 + Math.floor(rand() * 400);
+
   const issues = [];
-  for (let i = 1; i <= count; i++) {
+  for (let i = 0; i < count; i++) {
+    const issueNum = startNum + Math.floor(rand() * (count * 3)) + i;
     const status = pick(STATUSES);
     const type = pick(TYPES);
     const priority = pick(PRIORITIES);
@@ -93,8 +98,8 @@ function generateIssues(projectKey) {
     const updated = new Date(now - updatedDaysAgo * MS_PER_DAY);
 
     issues.push({
-      id: String(10000 + i),
-      key: `${projectKey}-${i}`,
+      id: String(10000 + issueNum),
+      key: `${projectKey}-${issueNum}`,
       fields: {
         summary: `${pick(ADJECTIVES)} ${pick(NOUNS)}`,
         status: { name: status },
