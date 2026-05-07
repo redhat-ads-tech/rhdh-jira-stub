@@ -48,6 +48,14 @@ const PRIORITY_ICONS = {
   Low: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M12.5 6.1c.5-.3 1.1-.1 1.4.3.3.5.1 1.1-.3 1.4l-5 3c-.3.2-.7.2-1 0l-5-3c-.5-.3-.6-.9-.3-1.4.3-.5.9-.6 1.4-.3L8 8.8l4.5-2.7z" fill="#2A8735"/></svg>'),
   Lowest: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M12.5 6.1c.5-.3 1.1-.1 1.4.3.3.5.1 1.1-.3 1.4l-5 3c-.3.2-.7.2-1 0l-5-3c-.5-.3-.6-.9-.3-1.4.3-.5.9-.6 1.4-.3L8 8.8l4.5-2.7z" fill="#2A8735"/><path d="M12.5 2.6c.5-.3 1.1-.1 1.4.3.3.5.1 1.1-.3 1.4l-5 3c-.3.2-.7.2-1 0l-5-3c-.5-.3-.6-.9-.3-1.4.3-.5.9-.6 1.4-.3L8 5.3l4.5-2.7z" fill="#2A8735"/></svg>'),
 };
+// SVG data URIs for issue type icons matching standard Jira colours
+const TYPE_ICONS = {
+  Bug: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="#E5493A"/><path d="M10.5 5L8 8l2.5 3h-2L6 8l2.5-3h2z" fill="#fff"/></svg>'),
+  Task: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><rect x="1" y="1" width="14" height="14" rx="2" fill="#4BADE8"/><path d="M4.5 8.5l2 2 5-5" stroke="#fff" stroke-width="1.5" fill="none"/></svg>'),
+  Story: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><rect x="1" y="1" width="14" height="14" rx="2" fill="#63BA3C"/><path d="M5 3h6v10H5z" fill="#fff"/></svg>'),
+  Epic: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><rect x="1" y="1" width="14" height="14" rx="2" fill="#904EE2"/><path d="M10 2L6 8.5h3L6 14l6-7H9l3-5h-2z" fill="#fff"/></svg>'),
+};
+
 const ADJECTIVES = ['Flaky', 'Broken', 'Missing', 'Slow', 'Incorrect', 'Outdated', 'Unclear', 'Redundant'];
 const NOUNS = ['login flow', 'dashboard widget', 'API response', 'database query', 'error handling', 'unit test', 'form validation', 'search index', 'email notification', 'user profile', 'cache layer', 'build pipeline'];
 
@@ -81,7 +89,7 @@ function generateIssues(projectKey) {
       fields: {
         summary: `${pick(ADJECTIVES)} ${pick(NOUNS)}`,
         status: { name: status },
-        issuetype: { name: type },
+        issuetype: { name: type, iconUrl: TYPE_ICONS[type] },
         priority: { name: priority, iconUrl: PRIORITY_ICONS[priority] },
         resolution: resolved ? { name: 'Done' } : null,
         // Jira uses +0000 suffix, not Z
@@ -93,4 +101,4 @@ function generateIssues(projectKey) {
   return issues;
 }
 
-module.exports = { fnv1a, generateIssues, STATUSES, TYPES };
+module.exports = { fnv1a, generateIssues, STATUSES, TYPES, TYPE_ICONS };

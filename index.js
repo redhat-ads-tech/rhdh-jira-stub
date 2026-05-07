@@ -11,7 +11,7 @@ const env = require('env-var');
 const express = require('express');
 const morgan = require('morgan');
 const { parseJql } = require('./jql-parser');
-const { fnv1a, generateIssues, STATUSES, TYPES } = require('./data-generator');
+const { fnv1a, generateIssues, STATUSES, TYPES, TYPE_ICONS } = require('./data-generator');
 
 const HTTP_PORT = env.get('HTTP_PORT').default(8080).asPortNumber();
 const HTTP_HOST = env.get('HTTP_HOST').default('0.0.0.0').asString();
@@ -35,6 +35,7 @@ app.get('/health', (_req, res) => {
 const ISSUE_TYPES = TYPES.map((name, i) => ({
   id: String(i + 1),
   name,
+  iconUrl: TYPE_ICONS[name],
   subtask: false,
 }));
 
