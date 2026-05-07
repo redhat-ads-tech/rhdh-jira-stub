@@ -56,6 +56,14 @@ const TYPE_ICONS = {
   Epic: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><rect x="1" y="1" width="14" height="14" rx="2" fill="#904EE2"/><path d="M10 2L6 8.5h3L6 14l6-7H9l3-5h-2z" fill="#fff"/></svg>'),
 };
 
+// Users matching the Keycloak realm in the demo environment
+const USERS = [
+  { key: 'dev1', displayName: 'Dave Developer', seed: 'Dave' },
+  { key: 'dev2', displayName: 'Divya Developer', seed: 'Divya' },
+  { key: 'pe1', displayName: 'Paul PlatEngineer', seed: 'Paul' },
+  { key: 'pe2', displayName: 'Priya PlatEngineer', seed: 'Priya' },
+];
+
 const ADJECTIVES = ['Flaky', 'Broken', 'Missing', 'Slow', 'Incorrect', 'Outdated', 'Unclear', 'Redundant'];
 const NOUNS = ['login flow', 'dashboard widget', 'API response', 'database query', 'error handling', 'unit test', 'form validation', 'search index', 'email notification', 'user profile', 'cache layer', 'build pipeline'];
 
@@ -73,6 +81,7 @@ function generateIssues(projectKey) {
     const status = pick(STATUSES);
     const type = pick(TYPES);
     const priority = pick(PRIORITIES);
+    const assignee = pick(USERS);
     const resolved = status === 'Done' || status === 'Closed';
 
     // Dates are relative to "now" so issues always look recent
@@ -91,6 +100,16 @@ function generateIssues(projectKey) {
         status: { name: status },
         issuetype: { name: type, iconUrl: TYPE_ICONS[type] },
         priority: { name: priority, iconUrl: PRIORITY_ICONS[priority] },
+        assignee: {
+          key: assignee.key,
+          displayName: assignee.displayName,
+          avatarUrls: {
+            '48x48': `https://api.dicebear.com/9.x/personas/svg?seed=${assignee.seed}`,
+            '32x32': `https://api.dicebear.com/9.x/personas/svg?seed=${assignee.seed}`,
+            '24x24': `https://api.dicebear.com/9.x/personas/svg?seed=${assignee.seed}`,
+            '16x16': `https://api.dicebear.com/9.x/personas/svg?seed=${assignee.seed}`,
+          },
+        },
         resolution: resolved ? { name: 'Done' } : null,
         // Jira uses +0000 suffix, not Z
         created: created.toISOString().replace('Z', '+0000'),

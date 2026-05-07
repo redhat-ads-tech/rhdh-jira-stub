@@ -208,7 +208,6 @@ app.get(`${API}/issue/:issueKey`, (req, res) => {
     ...issue,
     fields: {
       ...issue.fields,
-      assignee: null,
       comment: { comments: [], total: 0 },
     },
     changelog: { histories: [] },
