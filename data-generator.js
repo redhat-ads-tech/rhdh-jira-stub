@@ -40,6 +40,14 @@ function mulberry32(seed) {
 const STATUSES = ['Open', 'In Progress', 'In Review', 'Done', 'Closed'];
 const TYPES = ['Bug', 'Task', 'Story', 'Epic'];
 const PRIORITIES = ['Highest', 'High', 'Medium', 'Low', 'Lowest'];
+// SVG data URIs for priority icons so the plugin can render them without an external Jira instance
+const PRIORITY_ICONS = {
+  Highest: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M3.5 9.9c-.5.3-1.1.1-1.4-.3s-.1-1.1.3-1.4l5-3c.3-.2.7-.2 1 0l5 3c.5.3.6.9.3 1.4s-.9.6-1.4.3L8 7.2 3.5 9.9z" fill="#CF3104"/><path d="M3.5 13.4c-.5.3-1.1.1-1.4-.3-.3-.5-.1-1.1.3-1.4l5-3c.3-.2.7-.2 1 0l5 3c.5.3.6.9.3 1.4-.3.5-.9.6-1.4.3L8 10.7l-4.5 2.7z" fill="#CF3104"/></svg>'),
+  High: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M3.5 11.4c-.5.3-1.1.1-1.4-.3-.3-.5-.1-1.1.3-1.4l5-3c.3-.2.7-.2 1 0l5 3c.5.3.6.9.3 1.4-.3.5-.9.6-1.4.3L8 8.7l-4.5 2.7z" fill="#E8552D"/></svg>'),
+  Medium: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M3.5 9.9c-.5.3-1.1.1-1.4-.3s-.1-1.1.3-1.4l5-3c.3-.2.7-.2 1 0l5 3c.5.3.6.9.3 1.4s-.9.6-1.4.3L8 7.2 3.5 9.9z" fill="#F79232"/><path d="M3.5 13.4c-.5.3-1.1.1-1.4-.3-.3-.5-.1-1.1.3-1.4l5-3c.3-.2.7-.2 1 0l5 3c.5.3.6.9.3 1.4-.3.5-.9.6-1.4.3L8 10.7l-4.5 2.7z" fill="#F79232" transform="rotate(180 8 11.4)"/></svg>'),
+  Low: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M12.5 6.1c.5-.3 1.1-.1 1.4.3.3.5.1 1.1-.3 1.4l-5 3c-.3.2-.7.2-1 0l-5-3c-.5-.3-.6-.9-.3-1.4.3-.5.9-.6 1.4-.3L8 8.8l4.5-2.7z" fill="#2A8735"/></svg>'),
+  Lowest: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M12.5 6.1c.5-.3 1.1-.1 1.4.3.3.5.1 1.1-.3 1.4l-5 3c-.3.2-.7.2-1 0l-5-3c-.5-.3-.6-.9-.3-1.4.3-.5.9-.6 1.4-.3L8 8.8l4.5-2.7z" fill="#2A8735"/><path d="M12.5 2.6c.5-.3 1.1-.1 1.4.3.3.5.1 1.1-.3 1.4l-5 3c-.3.2-.7.2-1 0l-5-3c-.5-.3-.6-.9-.3-1.4.3-.5.9-.6 1.4-.3L8 5.3l4.5-2.7z" fill="#2A8735"/></svg>'),
+};
 const ADJECTIVES = ['Flaky', 'Broken', 'Missing', 'Slow', 'Incorrect', 'Outdated', 'Unclear', 'Redundant'];
 const NOUNS = ['login flow', 'dashboard widget', 'API response', 'database query', 'error handling', 'unit test', 'form validation', 'search index', 'email notification', 'user profile', 'cache layer', 'build pipeline'];
 
@@ -56,6 +64,7 @@ function generateIssues(projectKey) {
   for (let i = 1; i <= count; i++) {
     const status = pick(STATUSES);
     const type = pick(TYPES);
+    const priority = pick(PRIORITIES);
     const resolved = status === 'Done' || status === 'Closed';
 
     // Dates are relative to "now" so issues always look recent
@@ -73,7 +82,7 @@ function generateIssues(projectKey) {
         summary: `${pick(ADJECTIVES)} ${pick(NOUNS)}`,
         status: { name: status },
         issuetype: { name: type },
-        priority: { name: pick(PRIORITIES) },
+        priority: { name: priority, iconUrl: PRIORITY_ICONS[priority] },
         resolution: resolved ? { name: 'Done' } : null,
         // Jira uses +0000 suffix, not Z
         created: created.toISOString().replace('Z', '+0000'),
